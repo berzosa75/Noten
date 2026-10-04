@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+<title>Musik Partituren</title>
+<style>
+  :root {
+    --accent: #3d5a73;
+    --accent-light: #e2eaf0;
+    --border: #c7d4dd;
+    --bg: #f6f9fb;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    background: var(--bg);
+    margin: 0;
+    padding: 0 0 60px 0;
+    color: #2a2a2a;
+  }
+  header {
+    background: var(--accent);
+    color: #fff;
+    padding: 16px 20px 14px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.25);
+  }
+  header h1 { margin: 0 0 10px; font-size: 1.3em; font-weight: 600; }
+  #searchBox {
+    width: 100%; max-width: 480px; padding: 11px 14px; border-radius: 6px;
+    border: none; font-size: 16px;
+  }
+  #alphaNav {
+    display: flex; flex-wrap: nowrap; overflow-x: auto; gap: 2px;
+    margin-top: 10px; padding-bottom: 2px;
+  }
+  #alphaNav::-webkit-scrollbar { height: 4px; }
+  .alpha-btn {
+    flex: 0 0 auto; min-width: 26px; text-align: center; padding: 4px 6px;
+    border-radius: 4px; font-size: .82em; font-weight: 600; color: #fff;
+    background: rgba(255,255,255,.15); cursor: pointer; border: none;
+    font-family: inherit;
+  }
+  .alpha-btn:hover { background: rgba(255,255,255,.32); }
+  .alpha-btn.disabled {
+    color: rgba(255,255,255,.35); background: transparent;
+    cursor: default; pointer-events: none;
+  }
+  #stats { color: #e7eef3; font-size: .8em; margin-top: 7px; }
+  #instrumentFilters {
+    display: flex; gap: 8px; overflow-x: auto; margin-top: 10px; padding: 1px 0 2px;
+  }
+  .instrument-btn {
+    display: inline-flex; align-items: center; gap: 6px; flex: 0 0 auto;
+    border: 1px solid rgba(255,255,255,.35); border-radius: 999px;
+    background: rgba(255,255,255,.09); color: #fff; padding: 7px 11px;
+    font: inherit; font-size: .88em; cursor: pointer;
+  }
+  .instrument-btn:hover { background: rgba(255,255,255,.18); }
+  .instrument-btn.active {
+    color: var(--accent); background: #fff; border-color: #fff; font-weight: 650;
+  }
+  .instrument-icon { font-size: 1.15em; line-height: 1; }
+  main { max-width: 900px; margin: 20px auto; padding: 0 14px; }
+  .composer { margin-bottom: 24px; scroll-margin-top: 205px; }
+  .composer-name {
+    font-size: 1.2em; font-weight: 700; color: var(--accent);
+    border-bottom: 2px solid var(--accent); padding-bottom: 4px; margin-bottom: 10px;
+  }
+  .book {
+    background: #fff; border: 1px solid var(--border); border-radius: 8px;
+    margin-bottom: 8px; overflow: hidden;
+  }
+  .book-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 14px; min-height: 44px; cursor: pointer; user-select: none;
+  }
+  .book-header:hover, .book-header:active { background: var(--accent-light); }
+  .book-header.static { cursor: default; }
+  .book-header.static:hover { background: inherit; }
+  .book-title-block { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+  .book-title { font-weight: 600; font-size: 1em; word-break: break-word; }
+  .book-verlag { font-size: .82em; color: #777; font-style: italic; word-break: break-word; }
+  .toggle-icon {
+    font-size: 1.1em; color: var(--accent); transition: transform .2s ease;
+    margin-left: 10px; flex-shrink: 0; width: 24px; height: 24px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .book.open .toggle-icon { transform: rotate(90deg); }
+  .werke-list {
+    display: none; list-style: none; margin: 0; padding: 4px 14px 12px 22px;
+    border-top: 1px solid var(--border);
+  }
+  .book.open .werke-list { display: block; }
+  .werke-list li { padding: 6px 0; font-size: .95em; border-bottom: 1px dashed #eee; word-break: break-word; }
+  .werke-list li:last-child { border-bottom: none; }
+  mark { background: #ffe08a; padding: 0 1px; border-radius: 2px; }
+  #noResults { text-align: center; color: #999; margin-top: 40px; display: none; }
+  @media (max-width: 600px) {
+    header { padding: 13px 12px; }
+    header h1 { font-size: 1.1em; margin-bottom: 9px; }
+    #searchBox { padding: 10px 12px; }
+    main { margin: 14px auto; padding: 0 10px; }
+    .composer { scroll-margin-top: 215px; }
+    .composer-name { font-size: 1.1em; }
+    .book-header { padding: 11px 12px; }
+    .book-title { font-size: .97em; }
+    .book-verlag { font-size: .78em; }
+    .werke-list { padding: 4px 10px 10px 18px; }
+    .instrument-btn { padding: 7px 10px; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>🎼 Musik Partituren</h1>
+  <input type="search" id="searchBox" placeholder="Suche nach Komponist, Werk, Verlag oder Stück..." autocomplete="off">
+  <div id="alphaNav" aria-label="Komponisten nach Anfangsbuchstaben"></div>
+  <div id="stats" aria-live="polite"></div>
+  <nav id="instrumentFilters" aria-label="Nach Instrument filtern"></nav>
+</header>
+<main id="main"></main>
+<div id="noResults">Keine Treffer gefunden.</div>
+<script>
+const CATEGORIES = [{"id": "klavier", "name": "Klavier", "icon": "🎹", "books": [{"komponist": "Bach, Johann Sebastian", "werk": "Das Wohltemperierte Klavier Teil I", "verlag": "Henle Verlag", "werke": ["Präludium und Fuge Nr. 1 C-Dur, BWV 846", "Präludium und Fuge Nr. 2 c-Moll, BWV 847", "Präludium und Fuge Nr. 3 Cis-Dur, BWV 848", "Präludium und Fuge Nr. 4 cis-Moll, BWV 849", "Präludium und Fuge Nr. 5 D-Dur, BWV 850", "Präludium und Fuge Nr. 6 d-Moll, BWV 851", "Präludium und Fuge Nr. 7 Es-Dur, BWV 852", "Präludium es-Moll und Fuge dis-Moll Nr. 8, BWV 853", "Präludium und Fuge Nr. 9 E-Dur, BWV 854", "Präludium und Fuge Nr. 10 e-Moll, BWV 855", "Präludium und Fuge Nr. 11 F-Dur, BWV 856", "Präludium und Fuge Nr. 12 f-Moll, BWV 857", "Präludium und Fuge Nr. 13 Fis-Dur, BWV 858", "Präludium und Fuge Nr. 14 fis-Moll, BWV 859", "Präludium und Fuge Nr. 15 G-Dur, BWV 860", "Präludium und Fuge Nr. 16 g-Moll, BWV 861", "Präludium und Fuge Nr. 17 As-Dur, BWV 862", "Präludium und Fuge Nr. 18 gis-Moll, BWV 863", "Präludium und Fuge Nr. 19 A-Dur, BWV 864", "Präludium und Fuge Nr. 20 a-Moll, BWV 865", "Präludium und Fuge Nr. 21 B-Dur, BWV 866", "Präludium und Fuge Nr. 22 b-Moll, BWV 867", "Präludium und Fuge Nr. 23 H-Dur, BWV 868", "Präludium und Fuge Nr. 24 h-Moll, BWV 869"], "kategorie": "Klavier"}, {"komponist": "Bach, Johann Sebastian", "werk": "Das Wohltemperierte Klavier Teil II", "verlag": "Henle Verlag", "werke": ["Präludium und Fuge Nr. 1 C-Dur, BWV 870", "Präludium und Fuge Nr. 2 c-Moll, BWV 871", "Präludium und Fuge Nr. 3 Cis-Dur, BWV 872", "Präludium und Fuge Nr. 4 cis-Moll, BWV 873", "Präludium und Fuge Nr. 5 D-Dur, BWV 874", "Präludium und Fuge Nr. 6 d-Moll, BWV 875", "Präludium und Fuge Nr. 7 Es-Dur, BWV 876", "Präludium und Fuge Nr. 8 dis-Moll, BWV 877", "Präludium und Fuge Nr. 9 E-Dur, BWV 878", "Präludium und Fuge Nr. 10 e-Moll, BWV 879", "Präludium und Fuge Nr. 11 F-Dur, BWV 880", "Präludium und Fuge Nr. 12 f-Moll, BWV 881", "Präludium und Fuge Nr. 13 Fis-Dur, BWV 882", "Präludium und Fuge Nr. 14 fis-Moll, BWV 883", "Präludium und Fuge Nr. 15 G-Dur, BWV 884", "Präludium und Fuge Nr. 16 g-Moll, BWV 885", "Präludium und Fuge Nr. 17 As-Dur, BWV 886", "Präludium und Fuge Nr. 18 gis-Moll, BWV 887", "Präludium und Fuge Nr. 19 A-Dur, BWV 888", "Präludium und Fuge Nr. 20 a-Moll, BWV 889", "Präludium und Fuge Nr. 21 B-Dur, BWV 890", "Präludium und Fuge Nr. 22 b-Moll, BWV 891", "Präludium und Fuge Nr. 23 H-Dur, BWV 892", "Präludium und Fuge Nr. 24 h-Moll, BWV 893"], "kategorie": "Klavier"}, {"komponist": "Bach, Johann Sebastian", "werk": "Englische Suiten", "verlag": "Henle Verlag", "werke": ["Englische Suite Nr. 1 A-Dur, BWV 806", "Englische Suite Nr. 2 a-Moll, BWV 807", "Englische Suite Nr. 3 g-Moll, BWV 808", "Englische Suite Nr. 4 F-Dur, BWV 809", "Englische Suite Nr. 5 e-Moll, BWV 810", "Englische Suite Nr. 6 d-Moll, BWV 811"], "kategorie": "Klavier"}, {"komponist": "Bach, Johann Sebastian", "werk": "Französische Suiten", "verlag": "Henle Verlag", "werke": ["Französische Suite Nr. 1 d-Moll, BWV 812", "Französische Suite Nr. 2 c-Moll, BWV 813", "Französische Suite Nr. 3 h-Moll, BWV 814", "Französische Suite Nr. 4 Es-Dur, BWV 815", "Französische Suite Nr. 5 G-Dur, BWV 816", "Französische Suite Nr. 6 E-Dur, BWV 817"], "kategorie": "Klavier"}, {"komponist": "Bach, Johann Sebastian", "werk": "Klavierwerke Busoni-Ausgabe", "verlag": "Breitkopf", "werke": ["Präludium und Fuge Nr. 17 As-Dur, BWV 862", "Präludium und Fuge Nr. 18 gis-Moll, BWV 863", "Präludium und Fuge Nr. 19 A-Dur, BWV 864", "Präludium und Fuge Nr. 20 a-Moll, BWV 865", "Präludium und Fuge Nr. 21 B-Dur, BWV 866", "Präludium und Fuge Nr. 22 b-Moll, BWV 867", "Präludium und Fuge Nr. 23 H-Dur, BWV 868", "Präludium und Fuge Nr. 24 h-Moll, BWV 869"], "kategorie": "Klavier"}, {"komponist": "Bach, Johann Sebastian", "werk": "kleine Präludien", "verlag": "Gerig", "werke": ["kleine Präludien"], "kategorie": "Klavier"}, {"komponist": "Bach, Johann Sebastian", "werk": "Vier Duette", "verlag": "Henle Verlag", "werke": ["Duetto I e-Moll, BWV 802", "Duetto II F-Dur, BWV 803", "Duetto III G-Dur, BWV 804", "Duetto IV a-Moll, BWV 805"], "kategorie": "Klavier"}, {"komponist": "Bartók, Béla", "werk": "Sonatine", "verlag": "Schott", "werke": ["Sonatine"], "kategorie": "Klavier"}, {"komponist": "Bartók, Béla", "werk": "Suite", "verlag": "Henle Verlag", "werke": ["Suite Opus 14"], "kategorie": "Klavier"}, {"komponist": "Beethoven, Ludwig van", "werk": "Diabelli-Variationen", "verlag": "Henle Verlag", "werke": ["Diabelli-Variationen Opus 120"], "kategorie": "Klavier"}, {"komponist": "Beethoven, Ludwig van", "werk": "Klaviersonaten Band I", "verlag": "Henle Verlag", "werke": ["Klaviersonate Nr. 1 f-Moll, op. 2 Nr. 1", "Klaviersonate Nr. 2 A-Dur, op. 2 Nr. 2", "Klaviersonate Nr. 3 C-Dur, op. 2 Nr. 3", "Klaviersonate Nr. 4 Es-Dur, op. 7", "Klaviersonate Nr. 5 c-Moll, op. 10 Nr. 1", "Klaviersonate Nr. 6 F-Dur, op. 10 Nr. 2", "Klaviersonate Nr. 7 D-Dur, op. 10 Nr. 3", "Klaviersonate Nr. 8 c-Moll, op. 13 (Pathétique)", "Klaviersonate Nr. 9 E-Dur, op. 14 Nr. 1", "Klaviersonate Nr. 10 G-Dur, op. 14 Nr. 2", "Klaviersonate Nr. 11 B-Dur, op. 22", "Klaviersonate Nr. 12 As-Dur, op. 26 (Trauermarsch)", "Klaviersonate Nr. 13 Es-Dur, op. 27 Nr. 1", "Klaviersonate Nr. 14 cis-Moll, op. 27 Nr. 2 (Mondscheinsonate)", "Klaviersonate Nr. 15 D-Dur, op. 28 (Pastorale)"], "kategorie": "Klavier"}, {"komponist": "Beethoven, Ludwig van", "werk": "Klavierstücke Band I", "verlag": "Edition Peters", "werke": ["Bagatelle Es-Dur, op. 33 Nr. 1", "Bagatelle C-Dur, op. 33 Nr. 2", "Bagatelle F-Dur, op. 33 Nr. 3", "Bagatelle A-Dur, op. 33 Nr. 4", "Bagatelle C-Dur, op. 33 Nr. 5", "Bagatelle D-Dur, op. 33 Nr. 6", "Bagatelle As-Dur, op. 33 Nr. 7", "Bagatelle g-Moll, op. 119 Nr. 1", "Bagatelle C-Dur, op. 119 Nr. 2", "Bagatelle D-Dur, op. 119 Nr. 3", "Bagatelle A-Dur, op. 119 Nr. 4", "Bagatelle c-Moll, op. 119 Nr. 5", "Bagatelle G-Dur, op. 119 Nr. 6", "Bagatelle C-Dur, op. 119 Nr. 7", "Bagatelle C-Dur, op. 119 Nr. 8", "Bagatelle a-Moll, op. 119 Nr. 9", "Bagatelle A-Dur, op. 119 Nr. 10", "Bagatelle B-Dur, op. 119 Nr. 11", "Bagatelle G-Dur, op. 126 Nr. 1", "Bagatelle g-Moll, op. 126 Nr. 2", "Bagatelle Es-Dur, op. 126 Nr. 3", "Bagatelle h-Moll, op. 126 Nr. 4", "Bagatelle G-Dur, op. 126 Nr. 5", "Bagatelle Es-Dur, op. 126 Nr. 6", "Rondo A-Dur, WoO 49", "Rondo C-Dur, op. 51 Nr. 1", "Rondo G-Dur, op. 51 Nr. 2", "Rondo a capriccio G-Dur, op. 129 – Die Wut über den verlorenen Groschen"], "kategorie": "Klavier"}, {"komponist": "Beethoven, Ludwig van", "werk": "Sonaten III", "verlag": "Könemann Music Budapest", "werke": ["Klaviersonate Nr. 16 G-Dur, op. 31 Nr. 1", "Klaviersonate Nr. 17 d-Moll, op. 31 Nr. 2 (Der Sturm)", "Klaviersonate Nr. 18 Es-Dur, op. 31 Nr. 3", "Klaviersonate Nr. 19 g-Moll, op. 49 Nr. 1", "Klaviersonate Nr. 20 G-Dur, op. 49 Nr. 2", "Klaviersonate Nr. 21 C-Dur, op. 53 (Waldstein)", "Klaviersonate Nr. 22 F-Dur, op. 54", "Klaviersonate Nr. 23 f-Moll, op. 57 (Appassionata)", "Klaviersonate Nr. 24 Fis-Dur, op. 78"], "kategorie": "Klavier"}, {"komponist": "Beethoven, Ludwig van", "werk": "Sonaten IV", "verlag": "Könemann Music Budapest", "werke": ["Klaviersonate Nr. 25 G-Dur, op. 79", "Klaviersonate Nr. 26 Es-Dur, op. 81a (Les Adieux)", "Klaviersonate Nr. 27 e-Moll, op. 90", "Klaviersonate Nr. 28 A-Dur, op. 101", "Klaviersonate Nr. 29 B-Dur, op. 106 (Hammerklavier)", "Klaviersonate Nr. 30 E-Dur, op. 109", "Klaviersonate Nr. 31 As-Dur, op. 110", "Klaviersonate Nr. 32 c-Moll, op. 111"], "kategorie": "Klavier"}, {"komponist": "Berg, Alban", "werk": "Op. 1 Sonate für Klavier", "verlag": "Robert Lienau Musikverlag", "werke": ["Sonate für Klavier"], "kategorie": "Klavier"}, {"komponist": "Brahms, Johannes", "werk": "Klavierstücke", "verlag": "Henle Verlag", "werke": ["Capriccio fis-Moll, op. 76 Nr. 1", "Capriccio h-Moll, op. 76 Nr. 2", "Intermezzo As-Dur, op. 76 Nr. 3", "Intermezzo B-Dur, op. 76 Nr. 4", "Capriccio cis-Moll, op. 76 Nr. 5", "Intermezzo A-Dur, op. 76 Nr. 6", "Intermezzo a-Moll, op. 76 Nr. 7", "Capriccio C-Dur, op. 76 Nr. 8", "Rhapsodie h-Moll, op. 79 Nr. 1", "Rhapsodie g-Moll, op. 79 Nr. 2", "Capriccio d-Moll, op. 116 Nr. 1", "Intermezzo a-Moll, op. 116 Nr. 2", "Capriccio g-Moll, op. 116 Nr. 3", "Intermezzo E-Dur, op. 116 Nr. 4", "Intermezzo e-Moll, op. 116 Nr. 5", "Intermezzo E-Dur, op. 116 Nr. 6", "Capriccio d-Moll, op. 116 Nr. 7", "Intermezzo Es-Dur, op. 117 Nr. 1", "Intermezzo b-Moll, op. 117 Nr. 2", "Intermezzo cis-Moll, op. 117 Nr. 3", "Intermezzo a-Moll, op. 118 Nr. 1", "Intermezzo A-Dur, op. 118 Nr. 2", "Ballade g-Moll, op. 118 Nr. 3", "Intermezzo f-Moll, op. 118 Nr. 4", "Romanze F-Dur, op. 118 Nr. 5", "Intermezzo es-Moll, op. 118 Nr. 6", "Intermezzo h-Moll, op. 119 Nr. 1", "Intermezzo e-Moll, op. 119 Nr. 2", "Intermezzo C-Dur, op. 119 Nr. 3", "Rhapsodie Es-Dur, op. 119 Nr. 4"], "kategorie": "Klavier"}, {"komponist": "Chopin, Frédéric", "werk": "24 Préludes Op. 28", "verlag": "Wiener Urtext Edition", "werke": ["Prélude Nr. 1 C-Dur, op. 28 Nr. 1", "Prélude Nr. 2 a-Moll, op. 28 Nr. 2", "Prélude Nr. 3 G-Dur, op. 28 Nr. 3", "Prélude Nr. 4 e-Moll, op. 28 Nr. 4", "Prélude Nr. 5 D-Dur, op. 28 Nr. 5", "Prélude Nr. 6 h-Moll, op. 28 Nr. 6", "Prélude Nr. 7 A-Dur, op. 28 Nr. 7", "Prélude Nr. 8 fis-Moll, op. 28 Nr. 8", "Prélude Nr. 9 E-Dur, op. 28 Nr. 9", "Prélude Nr. 10 cis-Moll, op. 28 Nr. 10", "Prélude Nr. 11 H-Dur, op. 28 Nr. 11", "Prélude Nr. 12 gis-Moll, op. 28 Nr. 12", "Prélude Nr. 13 Fis-Dur, op. 28 Nr. 13", "Prélude Nr. 14 es-Moll, op. 28 Nr. 14", "Prélude Nr. 15 Des-Dur, op. 28 Nr. 15 (Regentropfen-Prélude)", "Prélude Nr. 16 b-Moll, op. 28 Nr. 16", "Prélude Nr. 17 As-Dur, op. 28 Nr. 17", "Prélude Nr. 18 f-Moll, op. 28 Nr. 18", "Prélude Nr. 19 Es-Dur, op. 28 Nr. 19", "Prélude Nr. 20 c-Moll, op. 28 Nr. 20", "Prélude Nr. 21 B-Dur, op. 28 Nr. 21", "Prélude Nr. 22 g-Moll, op. 28 Nr. 22", "Prélude Nr. 23 F-Dur, op. 28 Nr. 23", "Prélude Nr. 24 d-Moll, op. 28 Nr. 24"], "kategorie": "Klavier"}, {"komponist": "Chopin, Frédéric", "werk": "Ballade As-dur", "verlag": "Henle Verlag", "werke": ["Ballade As-dur Opus 47"], "kategorie": "Klavier"}, {"komponist": "Chopin, Frédéric", "werk": "Ballade F-dur", "verlag": "Henle Verlag", "werke": ["Ballade F-dur Opus 38"], "kategorie": "Klavier"}, {"komponist": "Chopin, Frédéric", "werk": "Ballade f-Moll", "verlag": "Henle Verlag", "werke": ["Ballade f-Moll Opus 52"], "kategorie": "Klavier"}, {"komponist": "Chopin, Frédéric", "werk": "Klavierstücke", "verlag": "Henle Verlag", "werke": ["Variations brillantes B-Dur, op. 12", "Bolero a-Moll, op. 19", "Tarantelle As-Dur, op. 43", "Allegro de Concert A-Dur, op. 46", "Fantasie f-Moll, op. 49", "Berceuse Des-Dur, op. 57", "Barcarolle Fis-Dur, op. 60", "Klaviervariationen über „Der Schweizerbub“ E-Dur, KK IVa/4", "3 Ecossaisen D-Dur, G-Dur und Des-Dur, op. 72 Nr. 3"], "kategorie": "Klavier"}, {"komponist": "Debussy, Claude", "werk": "Douze Études", "verlag": "Schott", "werke": ["Étude Nr. 1 – Pour les cinq doigts, d’après Monsieur Czerny", "Étude Nr. 2 – Pour les tierces", "Étude Nr. 3 – Pour les quartes", "Étude Nr. 4 – Pour les sixtes", "Étude Nr. 5 – Pour les octaves", "Étude Nr. 6 – Pour les huit doigts", "Étude Nr. 7 – Pour les degrés chromatiques", "Étude Nr. 8 – Pour les agréments", "Étude Nr. 9 – Pour les notes répétées", "Étude Nr. 10 – Pour les sonorités opposées", "Étude Nr. 11 – Pour les arpèges composés", "Étude Nr. 12 – Pour les accords"], "kategorie": "Klavier"}, {"komponist": "Debussy, Claude", "werk": "Estampes", "verlag": "Henle Verlag", "werke": ["Pagodes", "La Soirée dans Grenade", "Jardins sous la pluie"], "kategorie": "Klavier"}, {"komponist": "Debussy, Claude", "werk": "Préludes II pour piano", "verlag": "PWM Edition", "werke": ["Nr. 1 Brouillards", "Nr. 2 Feuilles mortes", "Nr. 3 La Puerta del Vino", "Nr. 4 Les Fées sont d’exquises danseuses", "Nr. 5 Bruyères", "Nr. 6 Général Lavine – excentric", "Nr. 7 La terrasse des audiences du clair de lune", "Nr. 8 Ondine", "Nr. 9 Hommage à S. Pickwick Esq. P.P.M.P.C.", "Nr. 10 Canope", "Nr. 11 Les tierces alternées", "Nr. 12 Feux d’artifice"], "kategorie": "Klavier"}, {"komponist": "Debussy, Claude", "werk": "Préludes Premier Livre", "verlag": "Henle Verlag", "werke": ["Nr. 1 Danseuses de Delphes", "Nr. 2 Voiles", "Nr. 3 Le vent dans la plaine", "Nr. 4 Les sons et les parfums tournent dans l’air du soir", "Nr. 5 Les collines d’Anacapri", "Nr. 6 Des pas sur la neige", "Nr. 7 Ce qu’a vu le vent d’ouest", "Nr. 8 La fille aux cheveux de lin", "Nr. 9 La sérénade interrompue", "Nr. 10 La cathédrale engloutie", "Nr. 11 La danse de Puck", "Nr. 12 Minstrels"], "kategorie": "Klavier"}, {"komponist": "Debussy, Claude", "werk": "The little negro", "verlag": "Alphonse Leduc", "werke": ["The little negro"], "kategorie": "Klavier"}, {"komponist": "Fauré, Gabriel", "werk": "13 Nocturnes", "verlag": "Edition Peters", "werke": ["Nocturne Nr. 1 es-Moll, op. 33 Nr. 1", "Nocturne Nr. 2 H-Dur, op. 33 Nr. 2", "Nocturne Nr. 3 As-Dur, op. 33 Nr. 3", "Nocturne Nr. 4 Es-Dur, op. 36", "Nocturne Nr. 5 B-Dur, op. 37", "Nocturne Nr. 6 Des-Dur, op. 63", "Nocturne Nr. 7 cis-Moll, op. 74", "Nocturne Nr. 8 Des-Dur, op. 84 Nr. 8", "Nocturne Nr. 9 h-Moll, op. 97", "Nocturne Nr. 10 e-Moll, op. 99", "Nocturne Nr. 11 fis-Moll, op. 104 Nr. 1", "Nocturne Nr. 12 e-Moll, op. 107", "Nocturne Nr. 13 h-Moll, op. 119"], "kategorie": "Klavier"}, {"komponist": "Franck, César", "werk": "Prélude, Fugue et Variation", "verlag": "Durand Editions Musicales", "werke": ["Prélude, Fugue et Variation opus 18"], "kategorie": "Klavier"}, {"komponist": "Gulda, Friedrich", "werk": "Klavierkompositionen", "verlag": "Papageno Buch und Musikalienverlag", "werke": ["Play piano play", "Sonatine", "Prelude und fugue", "Variationen über Light my fire", "Variations"], "kategorie": "Klavier"}, {"komponist": "Haydn, Joseph", "werk": "Klaviersonaten Band I", "verlag": "Stella Edition", "werke": ["Klaviersonate D-Dur, Hob. XVI:19 (1767)", "Klaviersonate c-Moll, Hob. XVI:20 (1771)", "Klaviersonate F-Dur, Hob. XVI:23 (1773)", "Klaviersonate G-Dur, Hob. XVI:27 (1776)", "Klaviersonate e-Moll, Hob. XVI:34 (1778)", "Klaviersonate C-Dur, Hob. XVI:35 (1780)", "Klaviersonate cis-Moll, Hob. XVI:36 (1780)", "Klaviersonate D-Dur, Hob. XVI:37 (1780)", "Arietta con variazioni Es-Dur, Hob. XVII:3 (1774)"], "kategorie": "Klavier"}, {"komponist": "Haydn, Joseph", "werk": "Sämtliche Klaviersonaten Band 3", "verlag": "Wiener Urtext Edition", "werke": ["Klaviersonate e-Moll, Hob. XVI:34", "Klaviersonate G-Dur, Hob. XVI:40", "Klaviersonate B-Dur, Hob. XVI:41", "Klaviersonate D-Dur, Hob. XVI:42", "Klaviersonate F-Dur, Hob. XVI:47", "Klaviersonate C-Dur, Hob. XVI:48", "Klaviersonate Es-Dur, Hob. XVI:49", "Klaviersonate C-Dur, Hob. XVI:50", "Klaviersonate D-Dur, Hob. XVI:51", "Klaviersonate Es-Dur, Hob. XVI:52"], "kategorie": "Klavier"}, {"komponist": "Haydn, Joseph", "werk": "Sämtliche Klaviersonaten Band II", "verlag": "Henle Verlag", "werke": ["Klaviersonate C-Dur, Hob. XVI:21", "Klaviersonate E-Dur, Hob. XVI:22", "Klaviersonate F-Dur, Hob. XVI:23", "Klaviersonate D-Dur, Hob. XVI:24", "Klaviersonate Es-Dur, Hob. XVI:25", "Klaviersonate A-Dur, Hob. XVI:26", "Klaviersonate G-Dur, Hob. XVI:27", "Klaviersonate Es-Dur, Hob. XVI:28", "Klaviersonate F-Dur, Hob. XVI:29", "Klaviersonate A-Dur, Hob. XVI:30", "Klaviersonate E-Dur, Hob. XVI:31", "Klaviersonate h-Moll, Hob. XVI:32", "Klaviersonate C-Dur, Hob. XVI:35", "Klaviersonate cis-Moll, Hob. XVI:36", "Klaviersonate D-Dur, Hob. XVI:37", "Klaviersonate Es-Dur, Hob. XVI:38", "Klaviersonate G-Dur, Hob. XVI:39", "Klaviersonate c-Moll, Hob. XVI:20"], "kategorie": "Klavier"}, {"komponist": "Haydn, Joseph", "werk": "Sämtliche Klaviersonaten Band III", "verlag": "Henle Verlag", "werke": ["Klaviersonate As-Dur, Hob. XVI:43", "Klaviersonate D-Dur, Hob. XVI:33", "Klaviersonate e-Moll, Hob. XVI:34", "Klaviersonate G-Dur, Hob. XVI:40", "Klaviersonate B-Dur, Hob. XVI:41", "Klaviersonate D-Dur, Hob. XVI:42", "Klaviersonate C-Dur, Hob. XVI:48", "Klaviersonate Es-Dur, Hob. XVI:49", "Klaviersonate Es-Dur, Hob. XVI:52", "Klaviersonate C-Dur, Hob. XVI:50", "Klaviersonate D-Dur, Hob. XVI:51"], "kategorie": "Klavier"}, {"komponist": "Mandyczewski, Eusebius", "werk": "Kleine Kadenzen, Kanons und Präludien für Pianoforte", "verlag": "Breitkopf & Härtel", "werke": ["Kleine Kadenzen, Kanons und Präludien für Pianoforte"], "kategorie": "Klavier"}, {"komponist": "Mendelssohn Bartholdy, Felix", "werk": "Konzert Nr. 1", "verlag": "Edition Peters", "werke": ["Konzert Nr. 1 g-Moll opus 25 für Klavier und Orchester"], "kategorie": "Klavier"}, {"komponist": "Mozart, Wolfgang Amadeus", "werk": "Die Zauberflöte", "verlag": "Edition Peters", "werke": ["Die Zauberflöte Klavier-Auszug"], "kategorie": "Klavier"}, {"komponist": "Mozart, Wolfgang Amadeus", "werk": "Klaviersonaten Band I", "verlag": "Henle Verlag", "werke": ["Klaviersonate C-Dur, KV 279 (189d)", "Klaviersonate F-Dur, KV 280 (189e)", "Klaviersonate B-Dur, KV 281 (189f)", "Klaviersonate Es-Dur, KV 282 (189g)", "Klaviersonate G-Dur, KV 283 (189h)", "Klaviersonate D-Dur, KV 284 (205b)", "Klaviersonate C-Dur, KV 309 (284b)", "Klaviersonate D-Dur, KV 311 (284c)", "Klaviersonate a-Moll, KV 310 (300d)"], "kategorie": "Klavier"}, {"komponist": "Mozart, Wolfgang Amadeus", "werk": "Klaviersonaten Band II", "verlag": "Henle Verlag", "werke": ["Klaviersonate C-Dur, KV 330 (300h)", "Klaviersonate A-Dur (Alla Turca), KV 331 (300i)", "Klaviersonate F-Dur, KV 332 (300k)", "Klaviersonate B-Dur, KV 333 (315c)", "Fantasie und Klaviersonate c-Moll, KV 475/457", "Klaviersonate F-Dur, KV 533/494", "Klaviersonate C-Dur (Sonata facile), KV 545", "Klaviersonate B-Dur, KV 570", "Klaviersonate D-Dur, KV 576"], "kategorie": "Klavier"}, {"komponist": "Mozart, Wolfgang Amadeus", "werk": "Klaviersonaten I", "verlag": "Edition Breitkopf", "werke": ["Klaviersonate Nr. 1 C-Dur, KV 279 (189d)", "Klaviersonate Nr. 2 F-Dur, KV 280 (189e)", "Klaviersonate Nr. 3 B-Dur, KV 281 (189f)", "Klaviersonate Nr. 4 Es-Dur, KV 282 (189g)", "Klaviersonate Nr. 5 G-Dur, KV 283 (189h)", "Klaviersonate Nr. 6 D-Dur, KV 284 (205b)", "Klaviersonate Nr. 7 C-Dur, KV 309 (284b)", "Klaviersonate Nr. 9 a-Moll, KV 310 (300d)", "Klaviersonate Nr. 8 D-Dur, KV 311 (284c)", "Klaviersonate Nr. 10 C-Dur, KV 330 (300h)"], "kategorie": "Klavier"}, {"komponist": "Mozart, Wolfgang Amadeus", "werk": "Sonaten für Klavier und Violine", "verlag": "Henle Verlag", "werke": ["Sonate für Klavier und Violine G-Dur, op. 1, KV 301 (293a)", "Sonate für Klavier und Violine Es-Dur, op. 1, KV 302 (293b)", "Sonate für Klavier und Violine C-Dur, op. 1, KV 303 (293c)", "Sonate für Klavier und Violine e-Moll, op. 1, KV 304 (300c)", "Sonate für Klavier und Violine A-Dur, op. 1, KV 305 (293d)", "Sonate für Klavier und Violine D-Dur, op. 1, KV 306 (300l)"], "kategorie": "Klavier"}, {"komponist": "Prokofjew, Sergej", "werk": "Twelve easy pieces op 65 for piano", "verlag": "Boosey & Hawkes", "werke": ["Nr. 1 Matin", "Nr. 2 Promenade", "Nr. 3 Historiette", "Nr. 4 Tarantelle", "Nr. 5 Repentirs", "Nr. 6 Valse", "Nr. 7 Cortège de sauterelles", "Nr. 8 La Pluie et l’Arc-en-Ciel", "Nr. 9 Attrape qui peut", "Nr. 10 Marche", "Nr. 11 Soir", "Nr. 12 Sur les prés, la lune se promène"], "kategorie": "Klavier"}, {"komponist": "Prokofjew, Sergej", "werk": "Visions fugitives Opus 22", "verlag": "Henle Verlag", "werke": ["Nr. 1 Lentamente", "Nr. 2 Andante", "Nr. 3 Allegretto", "Nr. 4 Animato", "Nr. 5 Molto giocoso", "Nr. 6 Con eleganza", "Nr. 7 Pittoresco (Arpa)", "Nr. 8 Commodo", "Nr. 9 Allegretto tranquillo", "Nr. 10 Ridicolosamente", "Nr. 11 Con vivacità", "Nr. 12 Assai moderato", "Nr. 13 Allegretto", "Nr. 14 Feroce", "Nr. 15 Inquieto", "Nr. 16 Dolente", "Nr. 17 Poetico", "Nr. 18 Con una dolce lentezza", "Nr. 19 Presto agitatissimo e molto accentuato", "Nr. 20 Lento irrealmente"], "kategorie": "Klavier"}, {"komponist": "Schubert, Franz", "werk": "Impromptus op. 90, op. Post. 142, Moments musicaux op. 94", "verlag": "Wiener Urtext Edition", "werke": ["Impromptu c-Moll, op. 90 Nr. 1, D 899/1", "Impromptu Es-Dur, op. 90 Nr. 2, D 899/2", "Impromptu Ges-Dur, op. 90 Nr. 3, D 899/3", "Impromptu As-Dur, op. 90 Nr. 4, D 899/4", "Moment musical C-Dur, op. 94 Nr. 1, D 780/1", "Moment musical As-Dur, op. 94 Nr. 2, D 780/2", "Moment musical f-Moll, op. 94 Nr. 3, D 780/3", "Moment musical cis-Moll, op. 94 Nr. 4, D 780/4", "Moment musical f-Moll, op. 94 Nr. 5, D 780/5", "Moment musical As-Dur, op. 94 Nr. 6, D 780/6", "Impromptu f-Moll, op. posth. 142 Nr. 1, D 935/1", "Impromptu As-Dur, op. posth. 142 Nr. 2, D 935/2", "Impromptu B-Dur, op. posth. 142 Nr. 3, D 935/3", "Impromptu f-Moll, op. posth. 142 Nr. 4, D 935/4"], "kategorie": "Klavier"}, {"komponist": "Schubert, Franz", "werk": "Klaviersonaten Band I", "verlag": "Henle Verlag", "werke": ["Sonate a-Moll, op. posth. 164, D 537", "Sonate Es-Dur, op. posth. 122, D 568", "Sonate H-Dur, op. posth. 147, D 575", "Sonate A-Dur, op. posth. 120, D 664", "Sonate a-Moll, op. posth. 143, D 784", "Sonate a-Moll, op. 42, D 845", "Sonate D-Dur, op. 53, D 850"], "kategorie": "Klavier"}, {"komponist": "Schubert, Franz", "werk": "Sammlung der Lieder", "verlag": "Edition Peters", "werke": ["Die schöne Müllerin", "Winterreise", "Schwanengesang", "Erlkönig", "Gretchen am Spinnrade op. 2, D 118", "Heidenröslein op. 3 Nr. 3, D 257", "Der Wanderer op. 4 Nr. 1, D 489", "Lob der Tränen op. 13 Nr. 2, D 711", "Sei mir gegrüßt op. 20 Nr. 1, D 741", "Frühlingsglaube op. 20 Nr. 2, D 686", "Die Forelle op. 32, D 550", "Die junge Nonne op. 43 Nr. 1, D 828", "Ave Maria", "Des Mädchens Klage op. 58 Nr. 3, D 191", "Du bist die Ruh op. 59 Nr. 3, D 776", "Lied der Mignon op. 62 Nr. 4, D 877", "Auf dem Wasser zu singen op. 72, D 774", "Der Tod und das Mädchen op. 7 Nr. 3, D 531", "Rastlose Liebe op. 5 Nr. 1, D 138", "Schäfers Klagelied op. 3 Nr. 1, D 121", "Jägers Abendlied op. 3 Nr. 4, D 368", "Wanderers Nachtlied op. 96 Nr. 3, D 768", "Romanze aus Rosamunde op. 26, D 797", "Geheimes op. 14 Nr. 2, D 719", "Ständchen, D 889"], "kategorie": "Klavier"}, {"komponist": "Schubert, Franz", "werk": "Tänze", "verlag": "Wilhelm Hansen, Musik-Forlag", "werke": ["36 Originaltänze, op. 9, D 365 – Nr. 1–18", "36 Originaltänze, op. 9, D 365 – Nr. 19–36", "12 Walzer, 17 Ländler und 9 Ecossaisen, op. 18, D 145 (Auswahl)", "16 Deutsche Tänze und 2 Ecossaisen, op. 33, D 783", "34 Valses sentimentales, op. 50, D 779 (Auswahl)", "16 Ländler und 2 Ecossaisen, op. 67, D 734 (Wiener Damen-Ländler)", "12 Valses nobles, op. 77, D 969", "12 Grazer Walzer, op. 91, D 924", "20 Walzer, op. posth. 127, D 146 (Auswahl)", "12 Deutsche Tänze (Ländler), op. posth. 171, D 790 (Auswahl)", "17 Ländler, D 366 (Auswahl)", "30 Menuette mit Trios, D 41 (Auswahl)", "Trio E-Dur, D 610"], "kategorie": "Klavier"}, {"komponist": "Schubert, Franz", "werk": "Tänze I", "verlag": "Könemann Music Budapest", "werke": ["36 Tänze Op. 9, D 365", "12 Walzer, 17 Ländler & 9 Ecossaisen, Op.18 D 145", "16 Deutsche & 2 Ecossaisen, Op. 33, D 783", "Galopp und 8 Ecossaisen, op. 49, D 735", "34 Valses sentimentales, op. 50, D 779", "16 Ländler und 2 Ecossaisen, op. 67, D 734", "12 Valses nobles, op. 77, D 969", "12 Grazer Walzer, op. 91, D 924", "3 Deutsche, D 971", "Deutscher, D 769/2", "2 Ländler, D 366/6, D 146/2", "3 Ecossaisen, D 781/4, D 782, D 781/7", "Walzer, D 366/17", "Deutscher mit Trio, D 779/8, 9", "Cotillon, D 976", "Walzer, D 978", "Walzer, D 979", "2 Walzer, D 980", "Grazer Galopp, D 925", "Walzer, D 980"], "kategorie": "Klavier"}, {"komponist": "Schumann, Robert", "werk": "Album für die Jugend Opus 68", "verlag": "Henle Verlag", "werke": ["Melodie", "Soldatenmarsch", "Trällerliedchen", "Ein Choral", "Stückchen", "Armes Waisenkind", "Jägerliedchen", "Wilder Reiter", "Volksliedchen", "Fröhlicher Landmann, von der Arbeit zurückkehrend", "Sicilianisch", "Knecht Ruprecht", "Mai, lieber Mai, bald bist du wieder da!", "Kleine Studie", "Frühlingsgesang", "Erster Verlust", "Kleiner Morgenwanderer", "Schnitterliedchen", "Kleine Romanze", "Ländliches Lied", "*** (ohne Titel)", "Rundgesang", "Reiterstück", "Ernteliedchen", "Nachklänge aus dem Theater", "*** (ohne Titel)", "Kanonisches Liedchen", "Erinnerung (4. November 1847)", "Fremder Mann", "*** (ohne Titel)", "Kriegslied", "Scheherazade", "Weinlesezeit – Fröhliche Zeit!", "Thema", "Mignon", "Lied italienischer Marinari", "Matrosenlied", "Winterzeit I", "Winterzeit II", "Kleine Fuge", "Nordisches Lied (Gruß an G.)", "Figurierter Choral", "Sylvesterlied"], "kategorie": "Klavier"}, {"komponist": "Schumann, Robert", "werk": "Drei Klaviersonaten für die Jugend", "verlag": "Edition Breitkopf", "werke": ["Kindersonate G-Dur op. 118a", "Sonate D-Dur op. 118b", "Sonate C-Dur op. 118c"], "kategorie": "Klavier"}, {"komponist": "Schumann, Robert", "werk": "Kinderszenen Opus 15", "verlag": "Henle Verlag", "werke": ["Von fremden Ländern und Menschen", "Kuriose Geschichte", "Hasche-Mann", "Bittendes Kind", "Glückes genug", "Wichtige Begebenheit", "Träumerei", "Am Kamin", "Ritter vom Steckenpferd", "Fast zu ernst", "Fürchtenmachen", "Kind im Einschlummern", "Der Dichter spricht"], "kategorie": "Klavier"}, {"komponist": "Schumann, Robert", "werk": "Papillons Opus 2", "verlag": "Henle Verlag", "werke": ["Papillons"], "kategorie": "Klavier"}, {"komponist": "Schumann, Robert", "werk": "Pianoforte-Werke Band II", "verlag": "Edition Peters", "werke": ["Davidsbündlertänze Opus 6", "Carnaval, Opus 9", "Novelletten, Opus 21", "Fantasiestücke, Opus 12", "Kreisleriana, Opus 16"], "kategorie": "Klavier"}, {"komponist": "Schumann, Robert", "werk": "Pianoforte-Werke Band III", "verlag": "Edition Peters", "werke": ["Humoreske, Opus 20", "Faschingsschwank aus Wien, Opus 26", "Études symphoniques, Opus 13", "Fantasie, Opus 17", "Abegg-Variationen, Opus 1", "Papillons, Opus 2", "Toccata, Opus 7", "Allegro, Opus 8", "Intermezzi, Opus 4", "Impromptus, Opus 5"], "kategorie": "Klavier"}, {"komponist": "Schumann, Robert", "werk": "Sammlung auserlesener Werke für das Pianoforte", "verlag": "Breitkopf & Härtel", "werke": ["Von fremden Ländern und Menschen", "Kuriose Geschichte", "Bittendes Kind", "Glückes genug", "Träumerei", "Am Kamin", "Fürchtenmachen", "Kind im Einschlummern", "Der Dichter spricht", "Romanze II aus op. 28", "Novellette Op. 21.1", "Novellette Op. 21.7", "Erscheinung eines Zauberbildes", "Zwischenactmusik", "Rufung der Alpenfee", "Melodram", "Polonaise", "Walzer", "Menuett", "Valse noble", "Chopin", "Reconnaissance", "Valse Allemande", "Aveu", "Promenade", "Romanze und Scherzo aus D-moll Symphonie", "Des Abends", "Warum", "Grillen", "Traumes Wirren", "Ende vom Lied", "Vorspiel", "Die Peri tritt mit schüchterner Gebärde", "Im Waldesgrün am stillen See", "Verlassener Jüngling", "Schlafe nun und ruhe", "Zigeunerleben op. 29", "Fantasie, 3. Satz, op. 17"], "kategorie": "Klavier"}, {"komponist": "Schumann, Robert", "werk": "Waldszenen", "verlag": "Edition Breitkopf", "werke": ["Eintritt", "Jäger auf der Lauer", "Einsame Blumen", "Verrufene Stelle", "Freundliche Landschaft", "Herberge", "Vogel als Prophet", "Jagdlied", "Abschied"], "kategorie": "Klavier"}]}, {"id": "cello", "name": "Cello", "icon": "🎻", "books": [{"komponist": "Bach, Johann Sebastian", "werk": "Sechs Suiten für Violoncello solo", "verlag": "Bärenreiter", "werke": ["Suite Nr. 1 G-dur, BWV 1007", "Suite Nr. 2 d-moll, BWV 1008", "Suite Nr. 3 C-dur, BWV 1009", "Suite Nr. 4 Es-dur, BWV 1010", "Suite Nr. 5 c-moll, BWV 1011", "Suite Nr. 6 D-dur, BWV 1012"], "kategorie": "Cello"}, {"komponist": "Beethoven, Ludwig van", "werk": "Sonaten für Klavier und Violoncello", "verlag": "Henle Verlag", "werke": ["Violoncellosonate F-dur, op. 5 Nr. 1", "Violoncellosonate g-moll, op. 5 Nr. 2", "Violoncellosonate A-dur, op. 69", "Violoncellosonate C-dur, op. 102 Nr. 1", "Violoncellosonate D-dur, op. 102 Nr. 2"], "kategorie": "Cello"}, {"komponist": "Beethoven, Ludwig van", "werk": "Variationen für Klavier und Violoncello", "verlag": "Henle Verlag", "werke": ["12 Variationen über ein Thema aus Händels Oratorium „Judas Maccabäus“ G-dur, WoO 45", "12 Variationen über „Ein Mädchen oder Weibchen“ aus Mozarts „Zauberflöte“ F-dur, op. 66", "7 Variationen über „Bei Männern, welche Liebe fühlen“ aus Mozarts „Zauberflöte“ Es-dur, WoO 46"], "kategorie": "Cello"}, {"komponist": "Beethoven, Ludwig van", "werk": "Variationen für Klavier und Violoncello", "verlag": "Bärenreiter", "werke": ["12 Variationen über ein Thema aus Händels Oratorium „Judas Maccabäus“ G-dur, WoO 45", "12 Variationen über „Ein Mädchen oder Weibchen“ aus Mozarts „Zauberflöte“ F-dur, op. 66", "7 Variationen über „Bei Männern, welche Liebe fühlen“ aus Mozarts „Zauberflöte“ Es-dur, WoO 46"], "kategorie": "Cello"}, {"komponist": "Debussy, Claude", "werk": "Sonate pour violoncelle et piano", "verlag": "Bärenreiter", "werke": ["Sonate pour violoncelle et piano"], "kategorie": "Cello"}, {"komponist": "Dvořák, Antonín", "werk": "Violoncellokonzert h-moll", "verlag": "Henle Verlag", "werke": ["Violoncellokonzert h-moll Opus 104"], "kategorie": "Cello"}, {"komponist": "Franck, César", "werk": "Sonate et Mélancolie", "verlag": "Bärenreiter", "werke": ["Sonate A-dur (Fassung für Klavier und Violoncello)", "Mélancolie für Violoncello und Klavier"], "kategorie": "Cello"}, {"komponist": "Haydn, Joseph", "werk": "Violoncellokonzert D-dur", "verlag": "Henle Verlag", "werke": ["Violoncellokonzert D-dur Hob. VIIb:2"], "kategorie": "Cello"}, {"komponist": "Mendelssohn Bartholdy, Felix", "werk": "Sämtliche Werke für Violoncello und Klavier", "verlag": "Bärenreiter", "werke": ["Sonate Nr. 1 B-dur, op. 45", "Sonate Nr. 2 D-dur, op. 58"], "kategorie": "Cello"}, {"komponist": "Schostakowitsch, Dmitri", "werk": "Konzert Nr. 1 für Violoncello und Orchester", "verlag": "Edition Sikorski", "werke": ["Konzert Nr. 1 für Violoncello und Orchester Opus 107"], "kategorie": "Cello"}, {"komponist": "Schubert, Franz", "werk": "Sonate für Arpeggione und Klavier", "verlag": "Wiener Urtext Edition", "werke": ["Arpeggione Sonata D 821"], "kategorie": "Cello"}, {"komponist": "Schumann, Robert", "werk": "Fantasiestücke", "verlag": "Henle Verlag", "werke": ["Fantasiestücke Opus 73"], "kategorie": "Cello"}, {"komponist": "Schumann, Robert", "werk": "Märchenbilder", "verlag": "Hortus Musicus", "werke": ["Märchenbilder Opus 113"], "kategorie": "Cello"}, {"komponist": "Strauss, Richard", "werk": "Sonate F-dur für Violoncello und Klavier", "verlag": "Henle Verlag", "werke": ["Sonate F-dur Opus 6 für Violoncello und Klavier"], "kategorie": "Cello"}]}];
+const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+const mainEl = document.getElementById('main');
+const searchBox = document.getElementById('searchBox');
+const statsEl = document.getElementById('stats');
+const noResultsEl = document.getElementById('noResults');
+const alphaNavEl = document.getElementById('alphaNav');
+const filtersEl = document.getElementById('instrumentFilters');
+let activeCategory = 'all';
+
+function escapeHtml(value) {
+  return String(value || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function firstLetter(name) {
+  const normalized = String(name || '').normalize('NFKD').replace(/[\u0300-\u036f]/g, '');
+  const letter = normalized.trim().charAt(0).toUpperCase();
+  return /[A-Z]/.test(letter) ? letter : '#';
+}
+function activeBooks() {
+  return CATEGORIES
+    .filter(category => activeCategory === 'all' || category.id === activeCategory)
+    .flatMap(category => category.books);
+}
+function groupedBooks() {
+  const groups = new Map();
+  activeBooks().forEach(book => {
+    if (!groups.has(book.komponist)) groups.set(book.komponist, []);
+    groups.get(book.komponist).push(book);
+  });
+  return Array.from(groups, ([komponist, books]) => ({
+    komponist,
+    books: books.sort((a,b) => a.werk.localeCompare(b.werk, 'de', {sensitivity:'base'}))
+  })).sort((a,b) => a.komponist.localeCompare(b.komponist, 'de', {sensitivity:'base'}));
+}
+function buildFilters() {
+  const buttons = [{id:'all', name:'Alle', icon:'🎼'}, ...CATEGORIES];
+  filtersEl.innerHTML = buttons.map(item => `
+    <button type="button" class="instrument-btn${item.id === activeCategory ? ' active' : ''}"
+      data-category="${escapeHtml(item.id)}" aria-pressed="${item.id === activeCategory}">
+      <span class="instrument-icon" aria-hidden="true">${escapeHtml(item.icon)}</span>
+      <span>${escapeHtml(item.name)}</span>
+    </button>`).join('');
+  filtersEl.querySelectorAll('.instrument-btn').forEach(button => {
+    button.addEventListener('click', () => {
+      activeCategory = button.dataset.category;
+      buildFilters();
+      buildAlphaNav();
+      render(searchBox.value);
+      window.scrollTo({top: 0, behavior: 'smooth'});
+    });
+  });
+}
+function buildAlphaNav() {
+  const available = new Set(groupedBooks().map(group => firstLetter(group.komponist)));
+  alphaNavEl.innerHTML = ALPHABET.map(letter => available.has(letter)
+    ? `<button type="button" class="alpha-btn" data-letter="${letter}">${letter}</button>`
+    : `<span class="alpha-btn disabled">${letter}</span>`).join('');
+  alphaNavEl.querySelectorAll('button').forEach(button => {
+    button.addEventListener('click', () => jumpToLetter(button.dataset.letter));
+  });
+}
+function jumpToLetter(letter) {
+  if (searchBox.value) {
+    searchBox.value = '';
+    render('');
+  }
+  const target = mainEl.querySelector(`.composer[data-letter="${letter}"]`);
+  if (target) target.scrollIntoView({behavior:'smooth', block:'start'});
+}
+function highlight(text, term) {
+  const safe = escapeHtml(text);
+  if (!term) return safe;
+  const index = safe.toLocaleLowerCase('de').indexOf(term.toLocaleLowerCase('de'));
+  return index < 0 ? safe : safe.slice(0,index) + '<mark>' + safe.slice(index,index+term.length) + '</mark>' + safe.slice(index+term.length);
+}
+function render(filterTerm='') {
+  mainEl.innerHTML = '';
+  const term = filterTerm.trim();
+  let visibleComposers = 0;
+  let visibleBooks = 0;
+  let visibleWorks = 0;
+  groupedBooks().forEach(composer => {
+    const composerMatches = composer.komponist.toLocaleLowerCase('de').includes(term.toLocaleLowerCase('de'));
+    const bookBlocks = [];
+    composer.books.forEach(book => {
+      const normalizedTerm = term.toLocaleLowerCase('de');
+      const bookMatches = book.werk.toLocaleLowerCase('de').includes(normalizedTerm) || book.verlag.toLocaleLowerCase('de').includes(normalizedTerm);
+      const matchingWorks = term ? book.werke.filter(work => work.toLocaleLowerCase('de').includes(normalizedTerm)) : [];
+      if (term && !composerMatches && !bookMatches && matchingWorks.length === 0) return;
+      visibleBooks += 1;
+      visibleWorks += book.werke.length;
+      const expand = Boolean(term && matchingWorks.length && !composerMatches && !bookMatches);
+      const single = book.werke.length <= 1;
+      if (single) {
+        const work = book.werke[0] || '';
+        bookBlocks.push(`<div class="book"><div class="book-header static"><div class="book-title-block">
+          <span class="book-title">${highlight(book.werk,term)}${work && work !== book.werk ? ' — ' + highlight(work,term) : ''}</span>
+          <span class="book-verlag">${highlight(book.verlag,term)}</span>
+        </div></div></div>`);
+      } else {
+        const items = book.werke.map(work => `<li>${highlight(work,term)}</li>`).join('');
+        bookBlocks.push(`<div class="book${expand ? ' open' : ''}">
+          <div class="book-header"><div class="book-title-block">
+            <span class="book-title">${highlight(book.werk,term)} <span style="font-weight:400;color:#999;">(${book.werke.length} Werke)</span></span>
+            <span class="book-verlag">${highlight(book.verlag,term)}</span>
+          </div><span class="toggle-icon">▶</span></div><ul class="werke-list">${items}</ul></div>`);
+      }
+    });
+    if (!bookBlocks.length) return;
+    visibleComposers += 1;
+    const section = document.createElement('section');
+    section.className = 'composer';
+    section.dataset.letter = firstLetter(composer.komponist);
+    section.innerHTML = `<div class="composer-name">${highlight(composer.komponist,term)}</div>` + bookBlocks.join('');
+    section.querySelectorAll('.book-header:not(.static)').forEach(header => {
+      header.addEventListener('click', () => header.parentElement.classList.toggle('open'));
+    });
+    mainEl.appendChild(section);
+  });
+  noResultsEl.style.display = visibleComposers ? 'none' : 'block';
+  statsEl.textContent = term
+    ? `${visibleComposers} Komponisten · ${visibleBooks} Bücher/Ausgaben · ${visibleWorks} Werke (Filter: "${filterTerm}")`
+    : `${visibleComposers} Komponisten · ${visibleBooks} Bücher/Ausgaben · ${visibleWorks} Werke`;
+}
+searchBox.addEventListener('input', event => render(event.target.value));
+buildFilters();
+buildAlphaNav();
+render();
+</script>
+</body>
+</html>
